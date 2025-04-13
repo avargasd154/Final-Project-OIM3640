@@ -1,15 +1,18 @@
 # The Big Idea
-Our project will be an Amazon Price Tracker. Essentially, users can input any listed amazon product and essentially, it will help track the price for any movements. 
+Our project will be an Amazon Price Tracker. Essentially, users can input any listed Amazon product, it will help track the price for any movements. 
 
 # Learning Objectives
-We have very similar interests and goals hence why we are working together. As a team, we want to implement the use of real time data such as prices and work with user input. Personally, 
+We have similar interests and goals, so we are working together. As a team, we want to implement the use of real-time data, such as price, and work with user input. We do want to try different objectives
+## Angel: I want to create something I can use for future projects, such as stock prices and other website trackers.
+## George:
 
 
 # Implementation
-
+There is already a video online that shows us this, however, the video is only for one object. We will create a function that requires the user to input the URL of the item. We will try to implement APIS such as Beautiful Soup
 
 # Project Schedule
-
+Every Week, we will meet at least once to work on the project. 
+## Week One: wo
 
 # Collaboration Plan
 
