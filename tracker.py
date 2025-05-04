@@ -6,10 +6,13 @@ import smtplib
 from email.message import EmailMessage
 from dotenv import load_dotenv
 
-# ----- 1.  Load secrets from .env ----------------------------------------
-load_dotenv()  # makes os.getenv read the keys we defined above
+# ----- 1.  Load API key from .env ----------------------------------------
+
+load_dotenv()
 
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
+if not RAPIDAPI_KEY:
+    raise ValueError("RAPIDAPI_KEY not found.")
 SMTP_SERVER  = os.getenv("SMTP_SERVER")
 SMTP_PORT    = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER    = os.getenv("SMTP_USER")
@@ -27,41 +30,33 @@ def extract_asin(url: str) -> str | None:
 
 
 def get_current_price(asin: str) -> float | None:
-    """Query a RapidAPI Amazon price endpoint and return the current price in USD.
-
-    NOTE:  This example uses the unofficial “Amazon Price API” on RapidAPI.
-           If you pick a different endpoint, adjust the URL / JSON parsing
-           below.  Printing the raw JSON once (`print(data)`) helps you see
-           the exact field names.
-    """
-    url = "https://amazon-price1.p.rapidapi.com/price"  # endpoint URL
-    params = {"marketplace": "US", "asin": asin}
+    """Query a RapidAPI Amazon price endpoint and return the current price in USD."""
+    url = "https://real-time-amazon-data.p.rapidapi.com/product-offers"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "amazon-price1.p.rapidapi.com",
+        "X-RapidAPI-Host": "real-time-amazon-data.p.rapidapi.com",
     }
+    params = {"asin": asin, "country": "US", "page": "1", "limit": "1"}
 
     try:
         resp = requests.get(url, headers=headers, params=params, timeout=10)
         resp.raise_for_status()
-        data = resp.json()  # usually a list with one dict per ASIN
+        data = resp.json()
 
-        if not data:
-            return None
+        # Parse the JSON returned by *Real‑Time Amazon Data API*
+        offers = data.get("data", {}).get("product_offers", [])
+        if not offers:
+            return None  # empty list → no offer/ASIN mismatch
 
-        # The API returns prices inside nested dicts.  A safe approach is to
-        # inspect the first item and look for keys containing "price".
-        # Here we assume the structure  data[0]["price"]["current_price"].
-        price_info = data[0].get("price", {})
-        current_price = price_info.get("current_price")
-        return float(current_price) if current_price else None
+        price_value = offers[0].get("price", {}).get("value")
+        return float(price_value) if price_value is not None else None
 
     except (requests.RequestException, ValueError):
         return None
 
 
 def send_email(recipient: str, subject: str, body: str) -> None:
-    """Send a plain‑text email via SMTP."""
+    """Send a plain text email via SMTP."""
 
     msg = EmailMessage()
     msg["From"] = SMTP_USER
@@ -70,7 +65,7 @@ def send_email(recipient: str, subject: str, body: str) -> None:
     msg.set_content(body)
 
     with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()  # Secure the connection (use .SMTP_SSL for port 465)
+        server.starttls()
         server.login(SMTP_USER, SMTP_PASS)
         server.send_message(msg)
 
@@ -82,7 +77,7 @@ def track_price(url: str, drop_percent: float, user_email: str, check_every: int
 
     asin = extract_asin(url)
     if not asin:
-        print("Could not find an ASIN in that URL — please double‑check it.")
+        print("Could not find an ASIN in that URL — please double check it.")
         return
 
     print("Fetching current price…")
